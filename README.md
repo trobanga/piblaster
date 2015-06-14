@@ -1,2 +1,2 @@
 # piblaster
-Raspberry music player
+Raspberry Pi music player
