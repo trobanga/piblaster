@@ -2,6 +2,7 @@
 # Example using a character LCD plate.
 import math
 import time
+import threading
 
 import Adafruit_CharLCD as LCD
 
@@ -25,25 +26,26 @@ import Adafruit_CharLCD as LCD
 
 class Line(object):
     """Handles line representation for LCD character display of display_length."""
-    def __init__(self, s="", display_length=16):
+    def __init__(self, s="", display_length=16, delimiter="   ***   "):
         self.display_length = display_length
         self.length = 0
         self.line = ""
         self.cur_pos = 0
         self.is_scrolling = False
         self.set_line(s)
-        self.deliminator = "   ***   "
+        self.delimiter = delimiter
         
 
     def set_line(self, s):
         """If length of s is larger than display length '   ***   ' is added and is_scolling is set to True."""
         if len(s) > self.display_length:
             self.is_scrolling = True
-            self.length = len(s) + len(self.deliminator)
+            self.length = len(s) + len(self.delimiter)
+            self.line = s
         else:
             self.is_scrolling = False
+            self.line = s + (self.display_length - len(s)) * " "
         self.cur_pos = 0
-        self.line = s
 
     def step(self, n=1):
         """Steps the line by n (default 1) characters."""
@@ -53,8 +55,9 @@ class Line(object):
                 self.cur_pos = 0
 
     def current_view(self):
+        """Extract substring that fits display starting at cur_pos with length display_length"""
         if self.is_scrolling:
-            s = self.line + self.deliminator + self.line
+            s = self.line + self.delimiter + self.line
             return s[self.cur_pos:(self.cur_pos + self.display_length)]
         else:
             return self.line
@@ -62,49 +65,46 @@ class Line(object):
 
 class Display(LCD.Adafruit_CharLCDPlate):
     """This is a docstring."""
-    def __init__ (self):
+    def __init__ (self, sleeptime=0.2, display_length=16, delimiter = "   ***   " ):
         super(Display, self).__init__()
 
-        self.color = (0, 0, 0)
-        self.top_line = Line()
-        self.bottom_line = Line()
+        self.top_line = Line(display_length=display_length, delimiter=delimiter)
+        self.bottom_line = Line(display_length=display_length, delimiter=delimiter)
 
-    def message(self, t, b):
-        """Update top_line to t and bottom_line to b."""
+        self.sleeptime = sleeptime
+
+        t = threading.Thread(target=self._display_text)
+        t.daemon = True
+        t.start()
+
+
+    def set_lines(self, t, b):
+        """Update both top and bottom lines"""
         self.top_line.set_line(t)
-        self.bottom_line.set_line(b)   
-        self.clear()
-        super(Display, self).message("{}\n{}".format(self.top_line.current_view(), self.bottom_line.current_view()))
-
-    def set_color(self, c):
-        """Set background color. c = (R, G, B)"""
-        super(Display, self).set_color(c[0], c[1], c[2])
+        self.bottom_line.set_line(b)
 
     def set_top_line(self, t):
         """Update only top_line"""
-        self.message(t, self.bottom_line.line)
+        self.top_line.set_line(t)
 
     def set_bottom_line(self, b):
         """Update only bottom_line"""
-        self.message(self.top_line.line, b)
+        self.bottom_line.set_line(b)
 
-    def scroll(self):
-        self.top_line.step()
-        self.bottom_line.step()
-        self.set_cursor(0, 0)
-        super(Display, self).message("{}\n{}".format(self.top_line.current_view(), self.bottom_line.current_view()))
+
+    def _display_text(self):
+        while True:
+            self.set_cursor(0, 0)
+            super(Display, self).message("{}\n{}".format(self.top_line.current_view(), self.bottom_line.current_view()))
+            self.top_line.step()
+            self.bottom_line.step()
+            time.sleep(self.sleeptime)
+
         
 
        
 if __name__ == "__main__":
     d = Display()
     
-    d.message("Hallo Welt alles Klatosdfghj", "Welt machs gut ich bin weg")
+    d.set_lines("Hallo Welt alles Klatosdfghj", "Welt machs gut ich bin weg")
 
-
-
-    for i in range(100):
-        time.sleep(0.2)
-        d.scroll()
-
-    
