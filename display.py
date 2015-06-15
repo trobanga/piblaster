@@ -1,26 +1,9 @@
 #!/usr/bin/python
-# Example using a character LCD plate.
 import math
 import time
 import threading
 
 import Adafruit_CharLCD as LCD
-
-
-# Initialize the LCD using the pins 
-# lcd = LCD.Adafruit_CharLCDPlate()
-
-# create some custom characters
-# lcd.create_char(1, [2, 3, 2, 2, 14, 30, 12, 0])
-# lcd.create_char(2, [0, 1, 3, 22, 28, 8, 0, 0])
-# lcd.create_char(3, [0, 14, 21, 23, 17, 14, 0, 0])
-# lcd.create_char(4, [31, 17, 10, 4, 10, 17, 31, 0])
-# lcd.create_char(5, [8, 12, 10, 9, 10, 12, 8, 0])
-# lcd.create_char(6, [2, 6, 10, 18, 10, 6, 2, 0])
-# lcd.create_char(7, [31, 17, 21, 21, 21, 21, 17, 31])
-
-# Show some basic colors.
-
 
 
 
@@ -64,40 +47,81 @@ class Line(object):
         
 
 class Display(LCD.Adafruit_CharLCDPlate):
-    """This is a docstring."""
-    def __init__ (self, sleeptime=0.2, display_length=16, delimiter = "   ***   " ):
+    """Main display class. Initializes Adafruit LCD Display and a thread that controls 
+    the content on the display and scrolls individual lines if necessary."""
+    def __init__ (self, sleeptime=0.2, display_length=16, delimiter = "   ***   ", debug=False):
         super(Display, self).__init__()
 
         self.top_line = Line(display_length=display_length, delimiter=delimiter)
         self.bottom_line = Line(display_length=display_length, delimiter=delimiter)
 
         self.sleeptime = sleeptime
+        self.debug = debug
 
-        t = threading.Thread(target=self._display_text)
-        t.daemon = True
-        t.start()
-
+        self.start()
+            
 
     def set_lines(self, t, b):
         """Update both top and bottom lines"""
         self.top_line.set_line(t)
         self.bottom_line.set_line(b)
+        if self.debug:
+            self._stdout_print()
 
     def set_top_line(self, t):
         """Update only top_line"""
         self.top_line.set_line(t)
+        if self.debug:
+            self._stdout_print()
 
     def set_bottom_line(self, b):
         """Update only bottom_line"""
         self.bottom_line.set_line(b)
+        if self.debug:
+            self._stdout_print()
+
+    def start(self):
+        """Starts the daemon thread that updates the display"""
+        self.run = True
+        if self.debug:
+            self._stdout_print()
+        else:
+            t = threading.Thread(target=self._display_print)
+            t.daemon = True
+            t.start()
 
 
-    def _display_text(self):
-        while True:
+    def stop(self):
+        """Stops the daemon thread that updates the display"""
+        self.run = False
+
+
+    def _display_print(self):
+        """Continuously prints to LCD display and scrolls if necessary"""
+        while self.run:
             self.set_cursor(0, 0)
             super(Display, self).message("{}\n{}".format(self.top_line.current_view(), self.bottom_line.current_view()))
             self.top_line.step()
             self.bottom_line.step()
+            time.sleep(self.sleeptime)
+        
+
+    def _stdout_print(self):
+        """For debug purposes. Instead of printing to the LCD display, it prints to stdout."""
+        maximum_length = 0
+        if self.top_line.is_scrolling:
+            maximum_length = len(self.top_line.line + self.top_line.delimiter)
+        if self.bottom_line.is_scrolling:
+            maximum_length = max(maximum_length, len(self.bottom_line.line + self.bottom_line.delimiter))
+        steps = 0
+        while self.run:
+            print(self.top_line.current_view())
+            print(self.bottom_line.current_view())
+            self.top_line.step()
+            self.bottom_line.step()
+            steps += 1
+            if maximum_length - self.top_line.display_length < steps:
+                self.run = False
             time.sleep(self.sleeptime)
 
         
