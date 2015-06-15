@@ -65,20 +65,14 @@ class Display(LCD.Adafruit_CharLCDPlate):
         """Update both top and bottom lines"""
         self.top_line.set_line(t)
         self.bottom_line.set_line(b)
-        if self.debug:
-            self._stdout_print()
 
     def set_top_line(self, t):
         """Update only top_line"""
         self.top_line.set_line(t)
-        if self.debug:
-            self._stdout_print()
 
     def set_bottom_line(self, b):
         """Update only bottom_line"""
         self.bottom_line.set_line(b)
-        if self.debug:
-            self._stdout_print()
 
     def start(self):
         """Starts the daemon thread that updates the display"""
