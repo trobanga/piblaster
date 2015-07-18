@@ -33,12 +33,14 @@ class BlueberryServer(object):
 
 
     def send(self, s, eol='\n'):
+        """Send string s, multiple eol characters are removed from s."""
         s = s.replace(eol, '') # remove existing eol characters because only exactly one must be sent
         self.client_sock.send("{}{}".format(s, eol))
 
             
-    def receive(self):
-        return self.client_sock.recv(1024)
+    def receive(self, b=1024):
+        """Receive b bytes"""
+        return self.client_sock.recv(b)
 
 
 
@@ -52,13 +54,6 @@ class BlueberryServer(object):
 if __name__ == "__main__":
 
     import time
-
-    # musikliste is a file where each line is a piece of good music - just take a random file...
-    with open('musikliste', 'r') as f:
-        musikliste = f.readlines()
-
-
-
 
 
     b = BlueberryServer()
