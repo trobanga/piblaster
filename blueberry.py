@@ -1,6 +1,30 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+
+# class for handling a bluetooth connection with the phones
+
+# command list
+# 1: send song database to phone
+#    including artist names and albums with songs
+
+# 2: send current playlist to phone
+
+# 3: append song to playlist
+# 4: append album to playlist
+# 5: append all albums from artist to playlist
+# 6: play song, new playlist
+# 7: play album, new playlist
+# 8: play all albums from artist, new playlist
+# 9: prepend song to playlist
+# 10: prepend album to playlist
+# 11: prepend all albums from artist to playlist
+
+
+# command format: cmd,num-id,payload\n
+# num-id is a (random?) identifier, used for response 
+
+
 import bluetooth
 
 class BlueberryServer(object):
@@ -46,7 +70,7 @@ class BlueberryServer(object):
 
     def close(self):
         """Close all connections"""
-        bluetooth.stop_advertising()
+        bluetooth.stop_advertising(self.server_sock)
         self.client_sock.close()
         self.server_sock.close()
         
@@ -74,8 +98,9 @@ if __name__ == "__main__":
                 break
             print("received [%s]" % data)
             print 'sending data...'
-            for m in musikliste:
-                b.send(m)
+            for m in range(500):
+                b.send(str(m))
+            b.send('stop')
             print 'sent'
     except IOError as e:
         print e
