@@ -79,9 +79,9 @@ class Piblaster(object):
 
         logging.info("Sending %d packets to client", num_pkt)
         
-        # for p in xrange(num_pkt):
-        #     logging.debug('sending string %d of %d', p, num_pkt)
-        #     self.send('', db_str[p * self.max_payload:(p+1) * self.max_payload])
+        for p in xrange(num_pkt):
+            logging.debug('sending string %d of %d', p, num_pkt)
+            self.send('', db_str[p * self.max_payload:(p+1) * self.max_payload])
             
 
         
@@ -142,10 +142,10 @@ if __name__ == '__main__':
 
 
     if args.debug:
-        logging.basicConfig(filename='piblaster.log',level=logging.DEBUG, format='%(levelname)s: %(asctime)s %(message)s')
+        loglevel = logging.DEBUG
     else:
-        logging.basicConfig(filename='piblaster.log',level=logging.INFO, format='%(levelname)s: %(asctime)s %(message)s')
+        loglevel = logging.INFO
+    logging.basicConfig(filename='piblaster.log',level=loglevel, format='%(levelname)s: %(asctime)s %(message)s')
     
-
     piblaster = Piblaster()
     
