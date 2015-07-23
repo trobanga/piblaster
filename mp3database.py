@@ -6,6 +6,7 @@ import mutagen.oggvorbis
 import mutagen.flac
 from mutagen.easyid3 import EasyID3
 import itertools
+import logging
 
 #TODO: use pandas or some kind of SQL
 
@@ -72,6 +73,13 @@ class db_structure(object):
                 self.album,
                 self.tracknumber]
 
+    def to_short_list(self):
+        return [self.albumartist,
+                self.artist,
+                self.title,
+                self.album,
+                self.tracknumber]
+
 
 class MusicDB(object):
 
@@ -96,6 +104,12 @@ class MusicDB(object):
     def num_songs(self):
         return len(self.music_db)
 
+
+    def json_repr(self, ):
+        l = map(db_structure.to_short_list, self.music_db)
+        return json.dumps(l)
+    
+    
     def save_db(self, db):
         with open(self.filename, 'w') as f:
             l = map(db_structure.to_list, db)
@@ -105,8 +119,6 @@ class MusicDB(object):
         try:
             with open(self.filename, 'r') as f:
                 db = json.loads(*f.readlines())
-                print len(db)
-                # directories, db = db
                 db = map(lambda x: db_structure(*x), db)
                 self._update_db(db)
         except Exception, e:
