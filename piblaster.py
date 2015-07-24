@@ -23,10 +23,11 @@ class Piblaster(object):
 
 
     # command list receiving:
-    # SEND_MUSIC_DB_VERSION: send version
-    # SEND_MUSIC_DB: send song database to phone
+    # MUSIC_DB_VERSION: send version
+    # MUSIC_DB: send song database to phone
     #    including artist names and albums with songs
-    # SEND_PLAYLIST: send current playlist to phone
+    # PLAYLIST: send current playlist to phone
+    # CURRENT_SONG: current song requested
     # APPEND_SONG: append song to playlist
     # APPEND_ALBUM: append album to playlist
     # APPEND_ARTIST: append all albums from artist to playlist
@@ -36,21 +37,29 @@ class Piblaster(object):
     # PREPEND_SONG: prepend song to playlist
     # PREPEND_ALBUM: prepend album to playlist
     # PREPEND_ARTIST: prepend all albums from artist to playlist
+    # STATE: STATE requested, playing, pause, etc
     
     # command list sending:
     # ACK: send ack
-    # MUSIC_DB_DATA: data chung of music DB
+    # MUSIC_DB_CHUNK: data chung of music DB
     # DB_SIZE: length of DB string, poor man's checksum
     # DB_PACKET_COUNT: number of packets that will be send for transferring the DB
-    # SONG_DB_VERSION
-    cmd_snd_list = ['ACK', 'MUSIC_DB_DATA', 'DB_SIZE', 'DB_PACKET_COUNT', 'MUSIC_DB_VERSION']
+    # MUSIC_DB_VERSION: 
+    # PLAYLIST_CHANGED: playlist changed, maybe not by you!?
+    # CURRECT_SONG: sending current song
+    # STATE:  sending state
+    
+    cmd_snd_list = ['ACK',
+                    'MUSIC_DB_CHUNK', 'DB_SIZE', 'DB_PACKET_COUNT', 'MUSIC_DB_VERSION',
+                    'PLAYLIST_CHANGED', 'CURRENT_SONG', 'STATE']
     
     
     def __init__(self):
         logging.info('Starting')
         
-        self.cmd_recv_list = {'SEND_MUSIC_DB_VERSION': self.send_music_db_version, 'SEND_MUSIC_DB': self.send_music_db,
-                              'SEND_PLAYLIST': None, 'APPEND_SONG': None, 'APPEND_ALBUM': None, 'APPEND_ARTIST': None, 
+        self.cmd_recv_list = {'MUSIC_DB_VERSION': self.send_music_db_version, 'MUSIC_DB': self.send_music_db,
+                              'PLAYLIST': None, 'CURRENT_SONG': None, 'STATE': None
+                              'APPEND_SONG': None, 'APPEND_ALBUM': None, 'APPEND_ARTIST': None, 
                               'PLAY_SONG': None, 'PLAY_ALBUM': None, 'PLAY_ARTIST': None, 
                               'PREPEND_SONG': None, 'PREPEND_ALBUM': None, 'PREPEND_ARTIST': None}
 
