@@ -12,8 +12,8 @@ class Piblaster(object):
     music_db_file = '/home/pi/piblaster/music.db' # where store mp3 tag data
     music_directories = ['/home/pi/music'] # list of directories filled with the finest music
 
-    music_db_file = '/home/trobanga/Workspace/projects/piblaster/music.db' # where store mp3 tag data
-    music_directories = ['/mnt/Banca/Music'] # list of directories filled with the finest music
+    # music_db_file = '/home/trobanga/Workspace/projects/piblaster/music.db' # where store mp3 tag data
+    # music_directories = ['/mnt/Banca/Music'] # list of directories filled with the finest music
 
 
 
@@ -58,15 +58,15 @@ class Piblaster(object):
         logging.info('Starting')
         
         self.cmd_recv_list = {'MUSIC_DB_VERSION': self.send_music_db_version, 'MUSIC_DB': self.send_music_db,
-                              'PLAYLIST': None, 'CURRENT_SONG': None, 'STATE': None
+                              'PLAYLIST': None, 'CURRENT_SONG': None, 'STATE': None,
                               'APPEND_SONG': None, 'APPEND_ALBUM': None, 'APPEND_ARTIST': None, 
                               'PLAY_SONG': None, 'PLAY_ALBUM': None, 'PLAY_ARTIST': None, 
                               'PREPEND_SONG': None, 'PREPEND_ALBUM': None, 'PREPEND_ARTIST': None}
 
         self.music_db = db.MusicDB(self.music_db_file) # load music db
         self.music_db.load_db()
-        # self.bt = BlueberryServer()
-        # self.bt.connect()
+        self.bt = BlueberryServer()
+        self.bt.connect()
         self.max_payload = 1000
         self.run()
 
@@ -89,7 +89,7 @@ class Piblaster(object):
         logging.info("Sending %d packets to client", num_pkt)
         
         for p in xrange(num_pkt):
-            logging.debug('sending string %d of %d', p, num_pkt)
+            logging.debug('sending string %d of %d', p+1, num_pkt)
             self.send('', db_str[p * self.max_payload:(p+1) * self.max_payload])
             
 
@@ -102,7 +102,7 @@ class Piblaster(object):
 
     def send(self, cmd, payload):
         """Sends cmd and payload via bluetooth."""
-        if self.bt.connected and cmd in cmd_snd_list:
+        if self.bt.connected and cmd in self.cmd_snd_list:
             self.bt.send("{},{}".format(cmd, payload))
             return True
         else:
@@ -119,7 +119,9 @@ class Piblaster(object):
         if not self.bt.messages.empty():
             # received new message
             m = self.bt.messages.get()
+            logging.debug('received %s', m)
             cmd, payload = m.split(',', 1) # split at first comma
+            logging.debug('cmd %s, payload: %s', cmd, payload)
             if cmd in self.cmd_recv_list.keys():
                 logging.info('cmd: %s, payload: %s', cmd, payload)
                 self.cmd_recv_list[cmd](payload)
@@ -129,12 +131,10 @@ class Piblaster(object):
 
     def run(self):
         """Main loop"""
-
-        self.send_music_db()
-        return
         while True:
-            # self.receive()
-            self.send_music_db()
+            self.send('ACK', 'TEST')
+            self.receive()
+            # self.send_music_db()
 
 
 
