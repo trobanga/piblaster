@@ -48,10 +48,12 @@ class Piblaster(object):
     # PLAYLIST_CHANGED: playlist changed, maybe not by you!?
     # CURRECT_SONG: sending current song
     # STATE:  sending state
+    # MUSIC_DB_SEND_COMPLETE: all chunks have been transmitted
+
     
-    cmd_snd_list = ['ACK',
+    cmd_send_list = ['ACK',
                     'MUSIC_DB_CHUNK', 'DB_SIZE', 'DB_PACKET_COUNT', 'MUSIC_DB_VERSION',
-                    'PLAYLIST_CHANGED', 'CURRENT_SONG', 'STATE']
+                    'PLAYLIST_CHANGED', 'CURRENT_SONG', 'STATE', 'MUSIC_DB_SEND_COMPLETE']
     
     
     def __init__(self):
@@ -70,9 +72,11 @@ class Piblaster(object):
         self.max_payload = 1000
         self.run()
 
+
     def music_db_version(self):
         return md5.md5(self.music_db.json_repr()).hexdigest()
 
+    
     def create_music_db(self):
         """(Re)creates music db and checksum/music_db_version."""
         try:
@@ -81,19 +85,30 @@ class Piblaster(object):
         except Exception, e:
             logging.error("Could not create music db from %s, error msg: %s", self.music_db_file, e)
 
-    def send_music_db(self, *args):
+
+            
+    def send_music_db(self, chunks=''):
+        """
+        Sends music db. Divide music db into chunks of max_payload.
+        chunks: list in json format, chunks in list will be transferred
+        """
         db_str = self.music_db.json_repr()
         len_db = len(db_str)
         num_pkt = len_db / self.max_payload + int(len_db % self.max_payload != 0)
 
+        self.send('DB_SIZE', num_pkt)
+        
         logging.info("Sending %d packets to client", num_pkt)
-        
-        for p in xrange(num_pkt):
-            logging.debug('sending string %d of %d', p+1, num_pkt)
-            self.send('', db_str[p * self.max_payload:(p+1) * self.max_payload])
-            
 
+        if not chunks:
+            r = xrange(num_pkt) # send all chunks
+        else:
+            r = json.loads(chunks) # list of chunks to send
         
+        for p in r:
+            logging.debug('sending string %d of %d', p+1, num_pkt)
+            self.send('MUSIC_DB_CHUNK', "{},{}".format(p, db_str[p * self.max_payload:(p+1) * self.max_payload]))
+
         
     def send_music_db_version(self, *args):
         """Send music_db_version to client."""
@@ -102,7 +117,7 @@ class Piblaster(object):
 
     def send(self, cmd, payload):
         """Sends cmd and payload via bluetooth."""
-        if self.bt.connected and cmd in self.cmd_snd_list:
+        if self.bt.connected and cmd in self.cmd_send_list:
             self.bt.send("{},{}".format(cmd, payload))
             return True
         else:
@@ -157,4 +172,5 @@ if __name__ == '__main__':
     logging.basicConfig(filename='piblaster.log',level=loglevel, format='%(levelname)s: %(asctime)s %(message)s')
     
     piblaster = Piblaster()
+    
     
