@@ -109,6 +109,8 @@ class Piblaster(object):
             logging.debug('sending string %d of %d', p+1, num_pkt)
             self.send('MUSIC_DB_CHUNK', "{},{}".format(p, db_str[p * self.max_payload:(p+1) * self.max_payload]))
 
+        self.send('MUSIC_DB_SEND_COMPLETE')
+        
         
     def send_music_db_version(self, *args):
         """Send music_db_version to client."""
