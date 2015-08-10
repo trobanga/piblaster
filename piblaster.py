@@ -149,7 +149,7 @@ class Piblaster(object):
     def run(self):
         """Main loop"""
         while True:
-            self.send('ACK', 'TEST')
+            # self.send('ACK', 'TEST')
             self.receive()
             # self.send_music_db()
 
