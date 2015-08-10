@@ -48,7 +48,7 @@ class Piblaster(object):
     # MUSIC_DB_VERSION: 
     # PLAYLIST_CHANGED: playlist changed, maybe not by you!?
     # CURRECT_SONG: sending current song
-    # STATE:  sending state
+    # STATE:  sending state, playing, pause, etc
     # MUSIC_DB_SEND_COMPLETE: all chunks have been transmitted
 
     
@@ -86,7 +86,6 @@ class Piblaster(object):
         except Exception, e:
             logging.error("Could not create music db from %s, error msg: %s", self.music_db_file, e)
 
-
             
     def send_music_db(self, chunks=''):
         """
@@ -102,9 +101,7 @@ class Piblaster(object):
         logging.info("Sending %d packets to client", num_pkt)
 
 
-        print chunks
-
-        if not chunks:
+        if not chunks: # not tested
             r = xrange(num_pkt) # send all chunks
         else:
             r = json.loads(chunks) # list of chunks to send
@@ -143,18 +140,16 @@ class Piblaster(object):
             m = self.bt.messages.get()
             logging.debug('received %s', m)
             cmd, payload = m.split(',', 1) # split at first comma
-            logging.debug('cmd %s, payload: %s', cmd, payload)
             if cmd in self.cmd_recv_list.keys():
                 logging.info('cmd: %s, payload: %s', cmd, payload)
-                self.cmd_recv_list[cmd](payload)
+                t = threading.Thread(target=self.cmd_recv_list[cmd], args=(payload))
+                t.daemon = True
+                t.start()
                 
-
-
-
+                
     def run(self):
         """Main loop"""
         while True:
-            # self.send('ACK', 'TEST')
             self.receive()
             # self.send_music_db()
 

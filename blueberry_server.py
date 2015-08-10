@@ -69,34 +69,3 @@ class BlueberryServer(object):
         bluetooth.stop_advertising(self.server_sock)
         self.client_sock.close()
         self.server_sock.close()
-
-        
-
-if __name__ == "__main__":
-
-    import time
-
-    b = BlueberryServer()
-    b.connect()
-    t = time.clock()
-
-    try:
-        while True:
-            data = b.receive()
-            if len(data) == 0: 
-                break
-            print time.clock()
-            if time.clock() - t > 20: # watchdog
-                break
-            print("received [%s]" % data)
-            print 'sending data...'
-            for m in range(500):
-                b.send(str(m))
-            b.send('stop')
-            print 'sent'
-    except IOError as e:
-        print e
-
-
-    b.close()
-    print("exiting")
