@@ -6,6 +6,7 @@ from blueberry_server import BlueberryServer
 import threading
 import logging
 import md5
+import json
 
 class Piblaster(object):
 
@@ -100,6 +101,9 @@ class Piblaster(object):
         
         logging.info("Sending %d packets to client", num_pkt)
 
+
+        print chunks
+
         if not chunks:
             r = xrange(num_pkt) # send all chunks
         else:
@@ -114,13 +118,14 @@ class Piblaster(object):
         
     def send_music_db_version(self, *args):
         """Send music_db_version to client."""
+        print 'sending MUSIC_DB_VERSION:', self.music_db_version()
         self.send('MUSIC_DB_VERSION', self.music_db_version())
 
 
-    def send(self, cmd, payload):
+    def send(self, cmd, payload='', eol='\n'):
         """Sends cmd and payload via bluetooth."""
         if self.bt.connected and cmd in self.cmd_send_list:
-            self.bt.send("{},{}".format(cmd, payload))
+            self.bt.send("{},{}{}".format(cmd, payload, eol))
             return True
         else:
             return False
