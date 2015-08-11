@@ -57,7 +57,8 @@ class Play(object):
             if self.cur_playlist.cur_song:
                 self.start()
             else:
-                self.is_playing = False
+                self.stop() 
+                
         except Exception, e:
             print e
 
