@@ -9,6 +9,8 @@ import bluetooth
 from Queue import Queue
 import threading
 
+import subprocess
+
 class BlueberryServer(object):
 
     uuid = "00001101-0000-1000-8000-00805F9B34FB"
@@ -22,22 +24,27 @@ class BlueberryServer(object):
 
 
     def connect(self):
-        self.server_sock = bluetooth.BluetoothSocket( bluetooth.RFCOMM )
-        self.server_sock.bind(("", bluetooth.PORT_ANY))
-        self.server_sock.listen(1)
-        self.port = self.server_sock.getsockname()[1]
+        try:
+            s = subprocess.call("sudo service bluetooth restart", shell=True) # evil hack, fix it
+            print s
+            self.server_sock = bluetooth.BluetoothSocket( bluetooth.RFCOMM )
+            self.server_sock.bind(("", bluetooth.PORT_ANY))
+            self.server_sock.listen(1)
+            self.port = self.server_sock.getsockname()[1]
 
-        bluetooth.advertise_service( self.server_sock, "BlueberryServer",
-                           service_id = self.uuid,
-                           service_classes = [ self.uuid, bluetooth.SERIAL_PORT_CLASS ],
-                           profiles = [ bluetooth.SERIAL_PORT_PROFILE ], 
-                           )
+            bluetooth.advertise_service( self.server_sock, "BlueberryServer",
+                                         service_id = self.uuid,
+                                         service_classes = [ self.uuid, bluetooth.SERIAL_PORT_CLASS ],
+                                         profiles = [ bluetooth.SERIAL_PORT_PROFILE ], 
+                                         )
     
-        print("Waiting for connection on RFCOMM channel %d" % self.port)
-        self.client_sock, self.client_info = self.server_sock.accept()
-        print("Accepted connection from ", self.client_info)
-        self.connected = True
-        self.receive(daemon=True)
+            print("Waiting for connection on RFCOMM channel %d" % self.port)
+            self.client_sock, self.client_info = self.server_sock.accept()
+            print("Accepted connection from ", self.client_info)
+            self.connected = True
+            self.receive(daemon=True)
+        except Exception as e:
+            print e
 
 
     def send(self, s, daemon=False):
@@ -60,8 +67,13 @@ class BlueberryServer(object):
             t.start()
         else:
             while self.connected:
-                msg = self.client_sock.recv(self.max_bytes)
-                self.messages.put(msg)
+                try:
+                    msg = self.client_sock.recv(self.max_bytes)
+                    self.messages.put(msg)
+                except Exception as e:
+                    print e
+                    self.connected = False
+                    self.connect() # try to reconnect
 
 
     def close(self):

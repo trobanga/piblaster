@@ -91,12 +91,13 @@ class Play(object):
         """
         if not self.cur_playlist.cur_song:
             self.cur_playlist.first()
-        self.is_playing = True
+        
         print 'now playing:',  self.cur_playlist.cur_song
         pygame.mixer.music.load(
             self.cur_playlist.cur_song['path'].encode('utf-8'))
         pygame.mixer.music.play()
-        self.play(daemon=True)
+        if not self.is_playing:
+            self.play(daemon=True)
         
         
     def play(self, daemon=False):
@@ -104,6 +105,7 @@ class Play(object):
         Checks if song has finished and starts next from playlist
         """
         if daemon:
+            self.is_playing = True
             t = threading.Thread(target=self.play)
             t.daemon = True
             t.start()
