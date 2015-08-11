@@ -1,6 +1,5 @@
 import pygame
 from pygame.locals import *
-from collections import deque
 import playlists
 import threading
 
@@ -11,6 +10,11 @@ class Play(object):
     """
 
     def __init__(self):
+
+        pygame.init()
+        
+
+        
         self.cur_playlist = None
         self.is_playing = False
         self.vol = pygame.mixer.music.get_volume()
@@ -52,6 +56,8 @@ class Play(object):
             self.cur_playlist.next_song()
             if self.cur_playlist.cur_song:
                 self.start()
+            else:
+                self.is_playing = False
         except Exception, e:
             print e
 
@@ -83,21 +89,15 @@ class Play(object):
         """
         Starts playing of self.cur_playlist.cur_song
         """
-        if self.cur_playlist.cur_song:
-            self.is_playing = True
-            print 'now playing:',  self.cur_playlist.cur_song
-            pygame.mixer.music.load(
-                self.cur_playlist.cur_song['path'].encode('utf-8'))
-            pygame.mixer.music.play()
-        else:
+        if not self.cur_playlist.cur_song:
             self.cur_playlist.first()
-            self.start()
-
-            
-    def play_first(self):
-        self.cur_playlist.first()
-        self.start()
-
+        self.is_playing = True
+        print 'now playing:',  self.cur_playlist.cur_song
+        pygame.mixer.music.load(
+            self.cur_playlist.cur_song['path'].encode('utf-8'))
+        pygame.mixer.music.play()
+        self.play(daemon=True)
+        
         
     def play(self, daemon=False):
         """
@@ -108,8 +108,9 @@ class Play(object):
             t.daemon = True
             t.start()
         else:
-            if not pygame.mixer.music.get_busy() \
-                and self.cur_playlist \
-                and not self.cur_playlist.is_empty() \
-                and self.is_playing:
-                self.next_song()
+            while self.is_playing:
+                if not pygame.mixer.music.get_busy() \
+                       and self.cur_playlist \
+                       and not self.cur_playlist.is_empty() \
+                       and self.is_playing:
+                    self.next_song()

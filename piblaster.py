@@ -8,6 +8,9 @@ import logging
 import md5
 import json
 
+import play
+import playlists
+
 class Piblaster(object):
 
     music_db_file = '/home/pi/piblaster/music.db' # where store mp3 tag data
@@ -63,14 +66,17 @@ class Piblaster(object):
         self.cmd_recv_list = {'MUSIC_DB_VERSION': self.send_music_db_version, 'MUSIC_DB': self.send_music_db,
                               'PLAYLIST': None, 'CURRENT_SONG': None, 'STATE': None,
                               'APPEND_SONG': None, 'APPEND_ALBUM': None, 'APPEND_ARTIST': None, 
-                              'PLAY_SONG': None, 'PLAY_ALBUM': None, 'PLAY_ARTIST': None, 
+                              'PLAY_SONG': None, 'PLAY_ALBUM': self.play_album, 'PLAY_ARTIST': None, 
                               'PREPEND_SONG': None, 'PREPEND_ALBUM': None, 'PREPEND_ARTIST': None}
 
         self.music_db = db.MusicDB(self.music_db_file) # load music db
         self.music_db.load_db()
+        self.play = play.Play()
         self.bt = BlueberryServer()
         self.bt.connect()
         self.max_payload = 1000
+
+       
         self.run()
 
 
@@ -142,9 +148,20 @@ class Piblaster(object):
             cmd, payload = m.split(',', 1) # split at first comma
             if cmd in self.cmd_recv_list.keys():
                 logging.info('cmd: %s, payload: %s', cmd, payload)
-                t = threading.Thread(target=self.cmd_recv_list[cmd], args=(payload))
-                t.daemon = True
-                t.start()
+                self.cmd_recv_list[cmd](payload)
+                # t = threading.Thread(target=self.cmd_recv_list[cmd], args=([payload]))
+                # t.daemon = True
+                # t.start()
+
+
+    def play_album(self, a):
+        artist, album = a.split(' - ')
+        print artist
+        print album
+        p = playlists.Playlist(a)
+        p.add_songs(self.music_db.get_album(album))
+        self.play.load_playlist(p)
+        self.play.start()
                 
                 
     def run(self):
