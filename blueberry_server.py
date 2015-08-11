@@ -8,7 +8,7 @@
 import bluetooth
 from Queue import Queue
 import threading
-
+import logging
 import subprocess
 
 class BlueberryServer(object):
@@ -26,7 +26,7 @@ class BlueberryServer(object):
     def connect(self):
         try:
             s = subprocess.call("sudo service bluetooth restart", shell=True) # evil hack, fix it
-            print s
+            logging.debug('Bluetooth service restarted retval %d', s)
             self.server_sock = bluetooth.BluetoothSocket( bluetooth.RFCOMM )
             self.server_sock.bind(("", bluetooth.PORT_ANY))
             self.server_sock.listen(1)
@@ -37,10 +37,12 @@ class BlueberryServer(object):
                                          service_classes = [ self.uuid, bluetooth.SERIAL_PORT_CLASS ],
                                          profiles = [ bluetooth.SERIAL_PORT_PROFILE ], 
                                          )
-    
+
+            logging.info('Waiting for connection on RFCOMM channel %d', self.port)
             print("Waiting for connection on RFCOMM channel %d" % self.port)
             self.client_sock, self.client_info = self.server_sock.accept()
             print("Accepted connection from ", self.client_info)
+            logging.info("Accepted connection from ", self.client_info)
             self.connected = True
             self.receive(daemon=True)
         except Exception as e:
