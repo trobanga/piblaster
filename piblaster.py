@@ -14,7 +14,7 @@ import playlists
 class Piblaster(object):
 
     music_db_file = '/home/pi/piblaster/music.db' # where store mp3 tag data
-    music_directories = ['/home/pi/music'] # list of directories filled with the finest music
+    music_directories = ['/mnt/usb0/music', '/mnt/usb0/audio_books'] # list of directories filled with the finest music
 
     # music_db_file = '/home/trobanga/Workspace/projects/piblaster/music.db' # where store mp3 tag data
     # music_directories = ['/mnt/Banca/Music'] # list of directories filled with the finest music
@@ -155,14 +155,16 @@ class Piblaster(object):
 
 
     def play_album(self, a):
-        artist, album = a.split(' - ')
-        print artist
-        print album
-        p = playlists.Playlist(a)
-        p.add_songs(self.music_db.get_album(album))
-        self.play.load_playlist(p)
-        self.play.start()
-                
+        try:
+            artist, album = a.split(' - ')
+            print artist
+            print album
+            p = playlists.Playlist(a)
+            p.add_songs(self.music_db.get_album(album))
+            self.play.load_playlist(p)
+            self.play.start()
+        except Exception as e:
+            print e
                 
     def run(self):
         """Main loop"""
@@ -189,6 +191,19 @@ if __name__ == '__main__':
     else:
         loglevel = logging.INFO
     logging.basicConfig(filename='piblaster.log',level=loglevel, format='%(levelname)s: %(asctime)s %(message)s')
+
+
+    if args.scan:
+        logging.info("Scanning for music...")
+        db = db.MusicDB(Piblaster.music_db_file)
+        try:
+            db.scan_library(Piblaster.music_directories)
+        except Exception, e:
+            print e
+            logging.debug("Couldn't scan db")
+        exit(0)
+
+
     
     piblaster = Piblaster()
     
